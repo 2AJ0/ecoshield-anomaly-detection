@@ -14,7 +14,13 @@ import json
 from dataclasses import dataclass
 from typing import Any, Dict
 
-from crewai import Agent, Crew, Process, Task
+try:
+    from crewai import Agent, Crew, Process, Task
+
+    CREWAI_AVAILABLE = True
+except ModuleNotFoundError:
+    CREWAI_AVAILABLE = False
+    Agent = Crew = Process = Task = Any  # type: ignore[assignment]
 
 
 # Mock LLM settings so local setup is simple. Update values as needed.
@@ -188,6 +194,9 @@ def run_local_fallback(payload: Dict[str, Any]) -> AnalysisResult:
 
 def run_ecoshield_analysis(payload: Dict[str, Any], llm_config: Dict[str, str]) -> AnalysisResult:
     """Run CrewAI workflow and return normalized result."""
+    if not CREWAI_AVAILABLE:
+        return run_local_fallback(payload)
+
     regulatory_agent, anomaly_agent = build_agents(llm_config)
     compliance_task, anomaly_task, summary_task = build_tasks(
         payload, regulatory_agent, anomaly_agent
